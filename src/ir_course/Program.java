@@ -1,5 +1,6 @@
 package ir_course;
 
+
 public class Program {
 
   public static void main(String[] args) {
@@ -7,15 +8,14 @@ public class Program {
   }
 
 
-  public final DocumentCollectionParser parser = new DocumentCollectionParser();
+  final Iterable<DocumentInCollection> docs = DocumentLoader.loadDocs();
+  final Iterable<String> queries = DocumentLoader.getQueries(docs);
 
   public Program() {
-    System.out.println("Loading documents...");
-    parser.parse("corpus_part2.xml");
+    System.out.println("Queries: " + queries);
   }
 
   public void run() {
-    System.out.println("Documents: " + parser.getDocuments().size());
   }
 
 }
