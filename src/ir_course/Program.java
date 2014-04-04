@@ -17,6 +17,7 @@ import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.PhraseQuery;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.similarities.BM25Similarity;
@@ -91,32 +92,38 @@ public class Program {
   }
 
   private Iterable<SearchResult> search(String q, Similarity similarity) throws Exception {
+    IndexReader reader = DirectoryReader.open(index);
+    try {
+      final IndexSearcher searcher = new IndexSearcher(reader);
+      searcher.setSimilarity(similarity);
+      TopDocs docs = searcher.search(buildQuery(q), Integer.MAX_VALUE);
+      return Lists.newArrayList(Iterables.transform(Lists.newArrayList(docs.scoreDocs), toSearchResult(searcher)));
+    } finally {
+      reader.close();
+    }
+  }
+
+  private Query buildQuery(String q) {
     PhraseQuery query = new PhraseQuery();
     for (String term : q.split(" ")) {
       query.add(new Term("abstract", term));
     }
     query.setSlop(15);
+    return query;
+  }
 
-    IndexReader reader = DirectoryReader.open(index);
-    try {
-      final IndexSearcher searcher = new IndexSearcher(reader);
-      searcher.setSimilarity(similarity);  // <<<<<<<<
-
-      TopDocs docs = searcher.search(query, Integer.MAX_VALUE);
-      return Lists.newArrayList(Iterables.transform(Lists.newArrayList(docs.scoreDocs), new Function<ScoreDoc, SearchResult>() {
-        @Override
-        public SearchResult apply(ScoreDoc d) {
-          try {
-            Document doc = searcher.doc(d.doc);
-            return new SearchResult(doc.get("title"), d.score, Integer.valueOf(doc.get("relevant")) == 1);
-          } catch (IOException e) {
-            throw new RuntimeException("Conversion failed: " + d);
-          }
+  private Function<ScoreDoc, SearchResult> toSearchResult(final IndexSearcher searcher) {
+    return new Function<ScoreDoc, SearchResult>() {
+      @Override
+      public SearchResult apply(ScoreDoc d) {
+        try {
+          Document doc = searcher.doc(d.doc);
+          return new SearchResult(doc.get("title"), d.score, Integer.valueOf(doc.get("relevant")) == 1);
+        } catch (IOException e) {
+          throw new RuntimeException("Conversion failed: " + d);
         }
-      }));
-    } finally {
-      reader.close();
-    }
+      }
+    };
   }
 
   private Document documentToLuceneDoc(DocumentInCollection doc) {
