@@ -2,6 +2,7 @@ package ir_course;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
@@ -29,6 +30,7 @@ import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
@@ -75,31 +77,44 @@ public class Program {
 
   private void performSearches() {
     try {
-      for (String q : queries) {
-        System.out.println("\n-- " + q);
-        System.out.println("\nBM25");
-        Iterable<SearchResult> results_bm25 = search(q, new BM25Similarity());
-        for (SearchResult res : results_bm25) {
-          System.out.println(res);
-        }
-        System.out.println("\nTF-IDF");
-        Iterable<SearchResult> results_tfidf = search(q, new DefaultSimilarity()); // tf-idf
-        for (SearchResult res : results_tfidf) {
-          System.out.println(res);
-        }
+      for (String searchQuery : queries) {
+        System.out.println("\n**********************");
+        System.out.println("QUERY:      " + searchQuery);
+        System.out.println("RELEVANT:   " + getRelevantDocs(searchQuery).size());
+        System.out.println("SIMILARITY: BM25");
+        performSearchAndPrintResults(searchQuery, new BM25Similarity());
+        System.out.println("\nSIMILARITY: TF-IDF");
+        performSearchAndPrintResults(searchQuery, new DefaultSimilarity());
       }
     } catch (Exception e) {
       System.err.println("Search failed! " + e.getMessage());
     }
   }
 
-  private Iterable<SearchResult> search(String q, Similarity similarity) throws Exception {
+  private List<DocumentInCollection> getRelevantDocs(final String searchQuery) {
+    return Lists.newArrayList(Iterables.filter(docs, new Predicate<DocumentInCollection>() {
+      @Override
+      public boolean apply(DocumentInCollection doc) {
+        return searchQuery.equals(doc.getQuery()) && doc.isRelevant();
+      }
+    }));
+  }
+
+  private void performSearchAndPrintResults(String query, Similarity similarity) throws Exception {
+    Iterable<SearchResult> results = search(query, similarity);
+    for (SearchResult res : results) {
+      System.out.println(res);
+    }
+  }
+
+  private Iterable<SearchResult> search(final String q, final Similarity similarity) throws Exception {
     IndexReader reader = DirectoryReader.open(index);
     try {
       final IndexSearcher searcher = new IndexSearcher(reader);
       searcher.setSimilarity(similarity);
       TopDocs docs = searcher.search(buildQuery(q), Integer.MAX_VALUE);
-      return Lists.newArrayList(Iterables.transform(Lists.newArrayList(docs.scoreDocs), toSearchResult(searcher)));
+      Iterable<ScoreDoc> docsWithSameQuery = Iterables.filter(Lists.newArrayList(docs.scoreDocs), onlyDocsWithQuery(q, searcher));
+      return Lists.newArrayList(Iterables.transform(docsWithSameQuery, toSearchResult(searcher)));
     } finally {
       reader.close();
     }
@@ -111,6 +126,19 @@ public class Program {
       query.add(new BooleanClause(new TermQuery(new Term("abstract", term)), BooleanClause.Occur.SHOULD));
     }
     return query;
+  }
+
+  private Predicate<ScoreDoc> onlyDocsWithQuery(final String q, final IndexSearcher searcher) {
+    return new Predicate<ScoreDoc>() {
+      @Override
+      public boolean apply(ScoreDoc d) {
+        try {
+          return searcher.doc(d.doc).get("query").equals(q);
+        } catch (IOException e) {
+          return false;
+        }
+      }
+    };
   }
 
   private Function<ScoreDoc, SearchResult> toSearchResult(final IndexSearcher searcher) {
