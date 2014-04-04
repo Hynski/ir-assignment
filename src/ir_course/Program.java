@@ -19,6 +19,8 @@ import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.similarities.BM25Similarity;
+import org.apache.lucene.search.similarities.DefaultSimilarity;
+import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 
@@ -71,17 +73,23 @@ public class Program {
     try {
       for (String q : queries) {
         System.out.println("\n-- " + q);
-        Iterable<DocumentInCollection> results = search(q);
-        for (DocumentInCollection doc : results) {
+        System.out.println("\nBM25");
+        Iterable<DocumentInCollection> results_bm25 = search(q, new BM25Similarity());
+        for (DocumentInCollection doc : results_bm25) {
           System.out.println(doc);
         }
+        System.out.println("\nTF-IDF");
+        Iterable<DocumentInCollection> results_tfidf = search(q, new DefaultSimilarity()); // tf-idf
+        for (DocumentInCollection doc : results_tfidf) {
+            System.out.println(doc);
+          }
       }
     } catch (Exception e) {
       System.err.println("Search failed! " + e.getMessage());
     }
   }
 
-  private Iterable<DocumentInCollection> search(String q) throws Exception {
+  private Iterable<DocumentInCollection> search(String q, Similarity similarity) throws Exception {
     PhraseQuery query = new PhraseQuery();
     for (String term : q.split(" ")) {
       query.add(new Term("abstract", term));
@@ -91,7 +99,7 @@ public class Program {
     IndexReader reader = DirectoryReader.open(index);
     try {
       final IndexSearcher searcher = new IndexSearcher(reader);
-      searcher.setSimilarity(new BM25Similarity());  // <<<<<<<<
+      searcher.setSimilarity(similarity);  // <<<<<<<<
 
       TopDocs docs = searcher.search(query, Integer.MAX_VALUE);
       return Lists.newArrayList(Iterables.transform(Lists.newArrayList(docs.scoreDocs), new Function<ScoreDoc, DocumentInCollection>() {
