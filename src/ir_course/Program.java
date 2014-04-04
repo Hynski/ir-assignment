@@ -175,7 +175,7 @@ public class Program {
     }
     @Override
     public String toString() {
-      return String.format("%s || %b || %s", new DecimalFormat("0.000000").format(score), relevant, title);
+      return String.format("%s;%b;%s", new DecimalFormat("0.000000").format(score), relevant, title);
     }
   }
 }
