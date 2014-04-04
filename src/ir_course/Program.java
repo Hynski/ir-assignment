@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.IntField;
@@ -56,7 +56,7 @@ public class Program {
   private void indexDocuments() {
     try {
       System.out.println("Indexing documents...");
-      Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_42);
+      Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_42);
       IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_42, analyzer);
       config.setOpenMode(OpenMode.CREATE);
 
