@@ -15,10 +15,12 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.search.similarities.DefaultSimilarity;
@@ -104,11 +106,10 @@ public class Program {
   }
 
   private Query buildQuery(String q) {
-    PhraseQuery query = new PhraseQuery();
+    BooleanQuery query = new BooleanQuery();
     for (String term : q.split(" ")) {
-      query.add(new Term("abstract", term));
+      query.add(new BooleanClause(new TermQuery(new Term("abstract", term)), BooleanClause.Occur.SHOULD));
     }
-    query.setSlop(15);
     return query;
   }
 
