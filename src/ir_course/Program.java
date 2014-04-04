@@ -42,7 +42,7 @@ public class Program {
 
   public static void main(String[] args) {
     new Program().run();
-    System.out.println("Bye");
+    System.out.println("\nBye");
   }
 
   final RAMDirectory index = new RAMDirectory();
@@ -83,6 +83,7 @@ public class Program {
       for (String searchQuery : queries) {
         System.out.println("\n**********************");
         System.out.println("QUERY: " + searchQuery);
+        System.out.println("method;step;precision;recall");
         performSearchAndPrintResults("bm25", searchQuery, new BM25Similarity());
         performSearchAndPrintResults("tf-idf", searchQuery, new DefaultSimilarity());
       }
