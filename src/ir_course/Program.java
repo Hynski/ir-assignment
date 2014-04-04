@@ -1,6 +1,7 @@
 package ir_course;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -74,22 +75,22 @@ public class Program {
       for (String q : queries) {
         System.out.println("\n-- " + q);
         System.out.println("\nBM25");
-        Iterable<DocumentInCollection> results_bm25 = search(q, new BM25Similarity());
-        for (DocumentInCollection doc : results_bm25) {
-          System.out.println(doc);
+        Iterable<SearchResult> results_bm25 = search(q, new BM25Similarity());
+        for (SearchResult res : results_bm25) {
+          System.out.println(res);
         }
         System.out.println("\nTF-IDF");
-        Iterable<DocumentInCollection> results_tfidf = search(q, new DefaultSimilarity()); // tf-idf
-        for (DocumentInCollection doc : results_tfidf) {
-            System.out.println(doc);
-          }
+        Iterable<SearchResult> results_tfidf = search(q, new DefaultSimilarity()); // tf-idf
+        for (SearchResult res : results_tfidf) {
+          System.out.println(res);
+        }
       }
     } catch (Exception e) {
       System.err.println("Search failed! " + e.getMessage());
     }
   }
 
-  private Iterable<DocumentInCollection> search(String q, Similarity similarity) throws Exception {
+  private Iterable<SearchResult> search(String q, Similarity similarity) throws Exception {
     PhraseQuery query = new PhraseQuery();
     for (String term : q.split(" ")) {
       query.add(new Term("abstract", term));
@@ -102,13 +103,12 @@ public class Program {
       searcher.setSimilarity(similarity);  // <<<<<<<<
 
       TopDocs docs = searcher.search(query, Integer.MAX_VALUE);
-      return Lists.newArrayList(Iterables.transform(Lists.newArrayList(docs.scoreDocs), new Function<ScoreDoc, DocumentInCollection>() {
+      return Lists.newArrayList(Iterables.transform(Lists.newArrayList(docs.scoreDocs), new Function<ScoreDoc, SearchResult>() {
         @Override
-        public DocumentInCollection apply(ScoreDoc d) {
+        public SearchResult apply(ScoreDoc d) {
           try {
             Document doc = searcher.doc(d.doc);
-            return new DocumentInCollection(doc.get("title"), doc.get("abstract"),
-                DocumentLoader.COMPARISON_SCENARIO, doc.get("query"), false);
+            return new SearchResult(doc.get("title"), d.score, Integer.valueOf(doc.get("relevant")) == 1);
           } catch (IOException e) {
             throw new RuntimeException("Conversion failed: " + d);
           }
@@ -126,5 +126,20 @@ public class Program {
     luceneDoc.add(new TextField("abstract", doc.getAbstractText(), Field.Store.YES));
     luceneDoc.add(new IntField("relevant", doc.isRelevant() ? 1 : 0, Field.Store.YES));
     return luceneDoc;
+  }
+
+  private static class SearchResult {
+    public final String title;
+    public final float score;
+    public final boolean relevant;
+    public SearchResult(String title, float score, boolean relevant) {
+      this.title = title;
+      this.score = score;
+      this.relevant = relevant;
+    }
+    @Override
+    public String toString() {
+      return String.format("%s || %b || %s", new DecimalFormat("0.000000").format(score), relevant, title);
+    }
   }
 }
