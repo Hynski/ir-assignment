@@ -82,12 +82,9 @@ public class Program {
     try {
       for (String searchQuery : queries) {
         System.out.println("\n**********************");
-        System.out.println("QUERY:      " + searchQuery);
-        System.out.println("RELEVANT:   " + getRelevantDocs(searchQuery).size());
-        System.out.println("SIMILARITY: BM25");
-        performSearchAndPrintResults(searchQuery, new BM25Similarity());
-        System.out.println("\nSIMILARITY: TF-IDF");
-        performSearchAndPrintResults(searchQuery, new DefaultSimilarity());
+        System.out.println("QUERY: " + searchQuery);
+        performSearchAndPrintResults("bm25", searchQuery, new BM25Similarity());
+        performSearchAndPrintResults("tf-idf", searchQuery, new DefaultSimilarity());
       }
     } catch (Exception e) {
       System.err.println("Search failed! " + e.getMessage());
@@ -112,21 +109,21 @@ public class Program {
     }));
   }
 
-  private void performSearchAndPrintResults(String query, Similarity similarity) throws Exception {
+  private void performSearchAndPrintResults(String id, String query, Similarity similarity) throws Exception {
     int relevantDocsInCollection = getRelevantDocs(query).size();
     ArrayList<SearchResult> results = Lists.newArrayList(search(query, similarity));
-    System.out.println("n;precision;recall");
     for (int i = 1; i <= MAX_STEPS; i++) {
-      printNStepKeyValues(results.subList(0, i), relevantDocsInCollection);
+      printNStepKeyValues(id, results.subList(0, i), relevantDocsInCollection);
     }
   }
 
-  private void printNStepKeyValues(List<SearchResult> stepResults, int relevantDocsInCollection) {
+  private void printNStepKeyValues(String id, List<SearchResult> stepResults, int relevantDocsInCollection) {
     DecimalFormat df = new DecimalFormat("0.000000");
     int itemsRetrieved = stepResults.size();
     int relevantItems = getRelevantResults(stepResults).size();
-    System.out.println(String.format("%d;%s;%s", itemsRetrieved, df.format((double)relevantItems / itemsRetrieved),
-        df.format((double)relevantItems / relevantDocsInCollection)));
+    System.out.println(String.format("%s;%d;%s;%s", id, itemsRetrieved,
+        df.format((double) relevantItems / itemsRetrieved),
+        df.format((double) relevantItems / relevantDocsInCollection)));
   }
 
   private Iterable<SearchResult> search(final String q, final Similarity similarity) throws Exception {
