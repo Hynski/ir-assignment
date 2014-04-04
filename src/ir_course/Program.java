@@ -2,6 +2,7 @@ package ir_course;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -36,6 +37,8 @@ import com.google.common.collect.Lists;
 
 
 public class Program {
+
+  public static final int MAX_STEPS = 11;
 
   public static void main(String[] args) {
     new Program().run();
@@ -100,11 +103,30 @@ public class Program {
     }));
   }
 
+  private List<SearchResult> getRelevantResults(Iterable<SearchResult> results) {
+    return Lists.newArrayList(Iterables.filter(results, new Predicate<SearchResult>() {
+      @Override
+      public boolean apply(SearchResult doc) {
+        return doc.relevant;
+      }
+    }));
+  }
+
   private void performSearchAndPrintResults(String query, Similarity similarity) throws Exception {
-    Iterable<SearchResult> results = search(query, similarity);
-    for (SearchResult res : results) {
-      System.out.println(res);
+    int relevantDocsInCollection = getRelevantDocs(query).size();
+    ArrayList<SearchResult> results = Lists.newArrayList(search(query, similarity));
+    System.out.println("n;precision;recall");
+    for (int i = 1; i <= MAX_STEPS; i++) {
+      printNStepKeyValues(results.subList(0, i), relevantDocsInCollection);
     }
+  }
+
+  private void printNStepKeyValues(List<SearchResult> stepResults, int relevantDocsInCollection) {
+    DecimalFormat df = new DecimalFormat("0.000000");
+    int itemsRetrieved = stepResults.size();
+    int relevantItems = getRelevantResults(stepResults).size();
+    System.out.println(String.format("%d;%s;%s", itemsRetrieved, df.format((double)relevantItems / itemsRetrieved),
+        df.format((double)relevantItems / relevantDocsInCollection)));
   }
 
   private Iterable<SearchResult> search(final String q, final Similarity similarity) throws Exception {
