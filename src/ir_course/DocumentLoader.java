@@ -13,7 +13,7 @@ public class DocumentLoader {
 
   public static Iterable<DocumentInCollection> loadDocs() {
     DocumentCollectionParser parser = new DocumentCollectionParser();
-    System.out.println("Loading documents...");
+    System.out.println("% Loading documents...");
     parser.parse("corpus_part2.xml");
     List<DocumentInCollection> allDocs = parser.getDocuments();
     return Iterables.filter(allDocs, new Predicate<DocumentInCollection>() {
