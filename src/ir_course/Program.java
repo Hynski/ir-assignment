@@ -43,8 +43,6 @@ import com.google.common.collect.Lists;
 
 public class Program {
 
-  public static final int MAX_STEPS = 11;
-
   public static void main(String[] args) {
     new Program().run();
     System.out.println("\n% Bye");
@@ -123,7 +121,7 @@ public class Program {
             performSearchAndPrintResults("2", searchQuery, new DefaultSimilarity(), false);
         }
         
-        System.out.println("]");
+        System.out.println("];");
 
       }
     } catch (Exception e) {
@@ -187,7 +185,7 @@ public class Program {
   private void performSearchAndPrintResults(String id, String query, Similarity similarity, boolean useStemmedQuery ) throws Exception {
     int relevantDocsInCollection = getRelevantDocs(query).size();
     ArrayList<SearchResult> results = Lists.newArrayList(search(query, similarity, useStemmedQuery));
-    for (int i = 1; i <= MAX_STEPS; i++) {
+    for (int i = 1; i <= results.size(); i++) {
       printNStepKeyValues(id, results.subList(0, i), relevantDocsInCollection);
     }
   }
