@@ -2,6 +2,7 @@ function [ ] = Plotter( )
 %PLOTTER Plots the data
 
 % load the output/results from 'output.m'
+clear all;
 output();
 
 % init
@@ -17,9 +18,12 @@ plot(recall, pre2, '--or');
 plot(recall, pre1stem, ':+c');
 plot(recall, pre2stem, '-.dm');
 
-xlabel('recall');
-ylabel('precision');
-legend('VSM tf-idf','BM25','VSM tf-idf with stemming','BM25 with stemming');
+xlabel('saanti (recall)');
+ylabel('tarkkuus (precision)');
+legend('BM25','VSM TF-IDF','BM25 & Porter-stemmaus','VSM TF-IDF & Porter-stemmaus');
+
+grid on;
+%axis([0 1 0.5 1]);
 
 end
 
