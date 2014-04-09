@@ -11,10 +11,10 @@ public class DocumentLoader {
 
   public static final int COMPARISON_SCENARIO = 13;
 
-  public static Iterable<DocumentInCollection> loadDocs() {
+  public static Iterable<DocumentInCollection> loadDocs(String docsFilename) {
     DocumentCollectionParser parser = new DocumentCollectionParser();
     System.out.println("% Loading documents...");
-    parser.parse("corpus_part2.xml");
+    parser.parse(docsFilename);
     List<DocumentInCollection> allDocs = parser.getDocuments();
     return Iterables.filter(allDocs, new Predicate<DocumentInCollection>() {
       @Override

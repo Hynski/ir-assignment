@@ -54,7 +54,7 @@ public class DocumentCollectionParser extends DefaultHandler {
 		} catch (SAXException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
-			e.printStackTrace();
+		  throw new RuntimeException(e);
 		}
 	}
 	

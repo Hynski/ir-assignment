@@ -44,15 +44,28 @@ import com.google.common.collect.Lists;
 public class Program {
 
   public static void main(String[] args) {
-    new Program().run();
+    if (args.length < 1) {
+      System.out.println("Usage: java ir_course.Program <docs_filename>");
+      return;
+    }
+    Program prog;
+    try {
+      prog = new Program(args[0]);
+    } catch (Exception e) {
+      System.err.println("Invalid docs filename or corrupted file: " + args[0]);
+      return;
+    }
+    prog.run();
     System.out.println("\n% Bye");
   }
 
   final RAMDirectory index = new RAMDirectory();
-  final Iterable<DocumentInCollection> docs = DocumentLoader.loadDocs();
-  final Iterable<String> queries = DocumentLoader.getQueries(docs);
+  final Iterable<DocumentInCollection> docs;
+  final Iterable<String> queries;
 
-  public Program() {
+  public Program(String docsFilename) {
+    docs    = DocumentLoader.loadDocs(docsFilename);
+    queries = DocumentLoader.getQueries(docs);
     System.out.println("% Queries: " + queries);
   }
 
