@@ -63,29 +63,30 @@ public class Program {
     performSearches(true);
   }
 
+  @SuppressWarnings("resource")
   private void indexDocuments(boolean useCustomAnalyzer) {
     try {
       System.out.print("\n% Indexing documents...");
       Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_42);
-      
+
       if (useCustomAnalyzer) {
-    	  System.out.println(" Analyzer with PorterStemFilter chosen.");
-    	  // Stem the query also!
-      
-	      analyzer = new Analyzer() {
-				@Override
-				protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
-					Tokenizer source = new LowerCaseTokenizer(Version.LUCENE_42, reader);
-					TokenStreamComponents tsc = new TokenStreamComponents(source, new PorterStemFilter(source));
-					return tsc;
-				}
-	
-	      };
-		
+        System.out.println(" Analyzer with PorterStemFilter chosen.");
+        // Stem the query also!
+
+        analyzer = new Analyzer() {
+          @Override
+          protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
+            Tokenizer source = new LowerCaseTokenizer(Version.LUCENE_42, reader);
+            TokenStreamComponents tsc = new TokenStreamComponents(source, new PorterStemFilter(
+                source));
+            return tsc;
+          }
+        };
+
       }else{
-    	  System.out.println(" EnglishAnalyzer chosen.");
+        System.out.println(" EnglishAnalyzer chosen.");
       }
-      
+
       IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_42, analyzer);
       config.setOpenMode(OpenMode.CREATE);
 
@@ -110,17 +111,17 @@ public class Program {
         System.out.println("% method(1=bm25,2=tf-idf),step,precision,recall;");
 
         if (useCustomAnalyzer) {
-        	System.out.println("stemdata_"+searchQuery.replace(" ","_")+" = [");
-        	
-            performSearchAndPrintResults("1", searchQuery, new BM25Similarity(), true);
-            performSearchAndPrintResults("2", searchQuery, new DefaultSimilarity(), true);
+          System.out.println("stemdata_"+searchQuery.replace(" ","_")+" = [");
+
+          performSearchAndPrintResults("1", searchQuery, new BM25Similarity(), true);
+          performSearchAndPrintResults("2", searchQuery, new DefaultSimilarity(), true);
         }else{
-        	System.out.println("data_"+searchQuery.replace(" ","_")+" = [");
-        	
-        	performSearchAndPrintResults("1", searchQuery, new BM25Similarity(), false);
-            performSearchAndPrintResults("2", searchQuery, new DefaultSimilarity(), false);
+          System.out.println("data_"+searchQuery.replace(" ","_")+" = [");
+
+          performSearchAndPrintResults("1", searchQuery, new BM25Similarity(), false);
+          performSearchAndPrintResults("2", searchQuery, new DefaultSimilarity(), false);
         }
-        
+
         System.out.println("];");
 
       }
@@ -130,40 +131,40 @@ public class Program {
   }
 
   private String stemWord (String w) {
-	PorterStemmer stemmer = new PorterStemmer();
-	stemmer.setCurrent(w);
-	stemmer.stem();
-	return stemmer.getCurrent();
+    PorterStemmer stemmer = new PorterStemmer();
+    stemmer.setCurrent(w);
+    stemmer.stem();
+    return stemmer.getCurrent();
   }
-  
+
   private String stemText(String stemThis) {
-	// stem
-	if(stemThis != null){
-		stemThis = stemThis.toLowerCase();
-		String stemmedText = "";
-		
-		String w = "";
-		for(int i = 0; i < stemThis.length(); i++){
-			if(stemThis.charAt(i) >= "a".charAt(0) && stemThis.charAt(i) <= "z".charAt(0)){
-				w = w.concat(Character.toString(stemThis.charAt(i)));
-				if(i == stemThis.length() - 1){
-					stemmedText = stemmedText.concat(stemWord(w)+" ");
-					w = "";
-				}
-			}else{
-				if(w.contentEquals("")){continue;}
-				stemmedText = stemmedText.concat(stemWord(w)+" ");
-				w = "";
-			}
-		}
-		return stemmedText.trim();
-		
-	}
-	
-	return null;
-		
+    // stem
+    if(stemThis != null){
+      stemThis = stemThis.toLowerCase();
+      String stemmedText = "";
+
+      String w = "";
+      for(int i = 0; i < stemThis.length(); i++){
+        if(stemThis.charAt(i) >= "a".charAt(0) && stemThis.charAt(i) <= "z".charAt(0)){
+          w = w.concat(Character.toString(stemThis.charAt(i)));
+          if(i == stemThis.length() - 1){
+            stemmedText = stemmedText.concat(stemWord(w)+" ");
+            w = "";
+          }
+        }else{
+          if(w.contentEquals("")){continue;}
+          stemmedText = stemmedText.concat(stemWord(w)+" ");
+          w = "";
+        }
+      }
+      return stemmedText.trim();
+
+    }
+
+    return null;
+
   }
-  
+
   private List<DocumentInCollection> getRelevantDocs(final String searchQuery) {
     return Lists.newArrayList(Iterables.filter(docs, new Predicate<DocumentInCollection>() {
       @Override
@@ -202,17 +203,17 @@ public class Program {
   private Iterable<SearchResult> search(final String q, final Similarity similarity, boolean useStemmedQuery) throws Exception {
     IndexReader reader = DirectoryReader.open(index);
     try {
-    	TopDocs docs = null;
-    	final IndexSearcher searcher = new IndexSearcher(reader);
-    	searcher.setSimilarity(similarity);
-		if(useStemmedQuery){
-			String stemmedQuery = stemText(q);
-			// System.out.println("STEMMED QUERY: " + stemmedQuery);
-			docs = searcher.search(buildQuery(stemmedQuery), Integer.MAX_VALUE);
-		}else{
-			docs = searcher.search(buildQuery(q), Integer.MAX_VALUE);
-		}
-      
+      TopDocs docs = null;
+      final IndexSearcher searcher = new IndexSearcher(reader);
+      searcher.setSimilarity(similarity);
+      if(useStemmedQuery){
+        String stemmedQuery = stemText(q);
+        // System.out.println("STEMMED QUERY: " + stemmedQuery);
+        docs = searcher.search(buildQuery(stemmedQuery), Integer.MAX_VALUE);
+      }else{
+        docs = searcher.search(buildQuery(q), Integer.MAX_VALUE);
+      }
+
       Iterable<ScoreDoc> docsWithSameQuery = Iterables.filter(Lists.newArrayList(docs.scoreDocs), onlyDocsWithQuery(q, searcher));
       return Lists.newArrayList(Iterables.transform(docsWithSameQuery, toSearchResult(searcher)));
     } finally {
